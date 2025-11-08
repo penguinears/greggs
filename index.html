@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greggs Sausage Roll Petition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Sausage_roll.jpg/120px-Sausage_roll.jpg" alt="Sausage Roll">
+  Save Greggs Sausage Rolls £1.25!
+</header>
+
+<main>
+  <section>
+    <h2>Sign the Petition</h2>
+    <input type="text" id="nameInput" placeholder="Your name">
+    <button id="signBtn">Sign</button>
+    <div class="signatures" id="signaturesList"></div>
+  </section>
+
+  <section>
+    <h2>Comments</h2>
+    <input type="text" id="commentName" placeholder="Your name">
+    <textarea id="commentText" placeholder="Write a comment..."></textarea>
+    <button id="commentBtn">Submit Comment</button>
+    <input type="text" id="filter" placeholder="Filter comments...">
+    <div class="comments" id="commentsList"></div>
+  </section>
+</main>
+
+<script>
+  const signBtn = document.getElementById('signBtn');
+  const nameInput = document.getElementById('nameInput');
+  const signaturesList = document.getElementById('signaturesList');
+
+  const commentBtn = document.getElementById('commentBtn');
+  const commentName = document.getElementById('commentName');
+  const commentText = document.getElementById('commentText');
+  const commentsList = document.getElementById('commentsList');
+  const filterInput = document.getElementById('filter');
+
+  // --- Petition ---
+  async function loadSignatures() {
+    const res = await fetch('/api/signatures');
+    const data = await res.json();
+    signaturesList.innerHTML = data.map(name => `<div class="signature">${name}</div>`).join('');
+  }
+
+  signBtn.addEventListener('click', async () => {
+    const name = nameInput.value.trim();
+    if (!name) return;
+    await fetch('/api/signatures', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    nameInput.value = '';
+    loadSignatures();
+  });
+
+  // --- Comments ---
+  async function loadComments(filter = '') {
+    const res = await fetch('/api/comments');
+    const data = await res.json();
+    commentsList.innerHTML = data
+      .filter(c => c.comment.toLowerCase().includes(filter.toLowerCase()))
+      .map(c => `<div class="comment"><strong>${c.name}:</strong> ${c.comment}</div>`).join('');
+  }
+
+  commentBtn.addEventListener('click', async () => {
+    const name = commentName.value.trim();
+    const comment = commentText.value.trim();
+    if (!name || !comment) return;
+    await fetch('/api/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, comment })
+    });
+    commentName.value = '';
+    commentText.value = '';
+    loadComments(filterInput.value);
+  });
+
+  filterInput.addEventListener('input', () => loadComments(filterInput.value));
+
+  // Initial load
+  loadSignatures();
+  loadComments();
+</script>
+</body>
+</html>
